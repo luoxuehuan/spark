@@ -36,6 +36,10 @@ import org.apache.spark.streaming.scheduler.Job
 import org.apache.spark.streaming.ui.UIUtils
 import org.apache.spark.util.{CallSite, Utils}
 
+
+/*
+一个离散流
+ */
 /**
  * A Discretized Stream (DStream), the basic abstraction in Spark Streaming, is a continuous
  * sequence of RDDs (of the same type) representing a continuous stream of data (see
