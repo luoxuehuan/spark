@@ -173,6 +173,11 @@ abstract class RDD[T: ClassTag](
   /** The SparkContext that created this RDD. */
   def sparkContext: SparkContext = sc
 
+  /*
+一个sc管理的rdd都有一个唯一的id
+
+以及一个 昵称
+ */
   /** A unique ID for this RDD (within its SparkContext). */
   val id: Int = sc.newRddId()
 
@@ -185,6 +190,13 @@ abstract class RDD[T: ClassTag](
     this
   }
 
+
+  /*
+标记rdd 缓存！
+算完之后，才进行缓存的吗？？？
+
+checkpoint 是算完之后重新算一遍的。 persist是算到这里就会缓存掉的。
+ */
   /**
    * Mark this RDD for persisting using the specified level.
    *
@@ -283,6 +295,10 @@ abstract class RDD[T: ClassTag](
     }
   }
 
+
+  /*
+ 获取这个rdd的分片数
+  */
   /**
    * Returns the number of partitions of this RDD.
    */
@@ -415,6 +431,29 @@ abstract class RDD[T: ClassTag](
       preservesPartitioning = true)
   }
 
+
+
+  /*
+去重的原理
+4  5  7 4
+map之后
+(4 ,null)
+(5 ,null)
+( 7, null)
+(4 ,null)
+
+reduceByKey之后
+(4 ,(null,null))
+( 5, null)
+(7 ,null)
+
+再次map 取出tuple的_1 即 取出
+4
+5
+7
+去重成功！
+
+ */
   /**
    * Return a new RDD containing the distinct elements in this RDD.
    */
@@ -429,6 +468,12 @@ abstract class RDD[T: ClassTag](
     distinct(partitions.length)
   }
 
+
+  /*
+返回一个拥有确切分区数的RDD
+可以增加或降低并行度。
+利用shuffle操作。来重建数据。
+ */
   /**
    * Return a new RDD that has exactly numPartitions partitions.
    *
@@ -442,6 +487,16 @@ abstract class RDD[T: ClassTag](
     coalesce(numPartitions, shuffle = true)
   }
 
+
+  /*
+返回一个聚合到指定分区数的rdd
+如果1000  到 100 窄依赖。不需要shuffle
+如果是一次猛烈的coalesce 从1000到 1 那么 可能会 使用比你预期小的空间
+
+
+如果是100 到1000 则可以开启shuffle。
+
+ */
   /**
    * Return a new RDD that is reduced into `numPartitions` partitions.
    *
