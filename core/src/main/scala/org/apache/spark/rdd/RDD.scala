@@ -45,6 +45,34 @@ import org.apache.spark.util.collection.OpenHashMap
 import org.apache.spark.util.random.{BernoulliCellSampler, BernoulliSampler, PoissonSampler,
   SamplingUtils}
 
+
+/*
+  * *一个弹性的分布式数据集。
+  * 是spark的基本抽象。
+  *
+  * rdd的数据结构是怎么样的？
+  *     partition数组。
+  *
+  * 这个class包含了对于RDD的基本操作。比如 map filter 和persist。
+  *
+  * PairRDDFunctions包含 对key-value pair的RDD的操作。比如 groupByKey 和 join
+  *
+  *
+  * 每个rdd都有5个主要特性。
+  * 1.一个Partition列表。
+  * 2.一个计算各个分区的函数。
+  * 3.一个在其他RDD上的依赖list
+  * 4.随意地，一个key-value rdd的分区。
+  * 5.随意地， 一个 计算hdfs file的分片 优先位置的的列表 。
+  *
+  *
+  *rdd的缺点是什么样的？
+  *
+  * rdd不适合于哪些场景下。
+  *
+  *
+  *
+ */
 /**
  * A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
  * partitioned collection of elements that can be operated on in parallel. This class contains the
