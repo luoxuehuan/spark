@@ -31,7 +31,7 @@ import org.apache.spark.rdd.RDD
  *
  * {{{
  * val sample = sc.parallelize(Seq(0.0, 1.0, 4.0, 4.0))
- * val kd = new KernelDensity()
+ * val kd = new KernelDgitensity()
  *   .setSample(sample)
  *   .setBandwidth(3.0)
  * val densities = kd.estimate(Array(-1.0, 2.0, 5.0))

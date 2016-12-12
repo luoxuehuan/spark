@@ -38,7 +38,8 @@ import org.apache.spark.util.{CallSite, Utils}
 
 
 /*
-一个离散流
+一个离散流.是spark streaming里面的基本抽象。
+是rdd 的模版。
  */
 /**
  * A Discretized Stream (DStream), the basic abstraction in Spark Streaming, is a continuous
