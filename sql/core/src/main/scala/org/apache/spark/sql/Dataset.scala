@@ -65,6 +65,18 @@ private[sql] object Dataset {
   }
 }
 
+
+/*
+  dataset 是一个 可以用方法函数或相关操作 并行转化的 特定领域的对象的强类型的集合。
+  每个dataset同时拥有一个类型为Row的无类型的视图  叫做DataFrame
+
+  对于dataset的操作被分为转化和行为操作。 转化操作产生新的datasets。
+  行为操作。执行计算返回结果。
+  转化操作包括：map filter select aggregate groupby
+  行为操作包括：count show 写数据到系统。
+
+  datasets是lazy的。计算只有行为操作的时候才会执行。
+ */
 /**
  * A Dataset is a strongly typed collection of domain-specific objects that can be transformed
  * in parallel using functional or relational operations. Each Dataset also has an untyped view
