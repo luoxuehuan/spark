@@ -271,6 +271,8 @@ class VectorUDT extends UserDefinedType[Vector] {
 }
 
 /**
+  * 向量
+  *
  * Factory methods for [[org.apache.spark.mllib.linalg.Vector]].
  * We don't use the name `Vector` because Scala imports
  * [[scala.collection.immutable.Vector]] by default.
@@ -597,6 +599,9 @@ object Vectors {
 }
 
 /**
+  *
+  * 密集向量
+  *
  * A dense vector represented by a value array.
  */
 @Since("1.0.0")
@@ -733,6 +738,8 @@ object DenseVector {
 }
 
 /**
+  * 密集向量
+  *
  * A sparse vector represented by an index array and a value array.
  *
  * @param size size of the vector.
