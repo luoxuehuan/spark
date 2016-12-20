@@ -49,6 +49,12 @@ import org.apache.spark.streaming.scheduler.{ExecutorAllocationManager, JobSched
 import org.apache.spark.streaming.ui.{StreamingJobProgressListener, StreamingTab}
 import org.apache.spark.util.{CallSite, ShutdownHookManager, ThreadUtils, Utils}
 
+
+/**
+  * spark steaming 的入口。提供来自不同数据源的 创建dstream的方法
+  *
+  * awaitTermination 允许当前线程等待结束
+  */
 /**
  * Main entry point for Spark Streaming functionality. It provides methods used to create
  * [[org.apache.spark.streaming.dstream.DStream]]s from various input sources. It can be either
@@ -180,6 +186,10 @@ class StreamingContext private[streaming] (
     if (isCheckpointPresent) _cp.checkpointDuration else graph.batchDuration
   }
 
+
+  /**
+    *  任务调度器！初始化！
+    */
   private[streaming] val scheduler = new JobScheduler(this)
 
   private[streaming] val waiter = new ContextWaiter
@@ -284,6 +294,14 @@ class StreamingContext private[streaming] (
     }
   }
 
+
+  /*
+  读取数据源 来自于 socket的
+
+  默认使用    SocketReceiver.bytesToLines  转化 数据源   把  数据源变成lines
+
+
+   */
   /**
    * Creates an input stream from TCP source hostname:port. Data is received using
    * a TCP socket and the receive bytes is interpreted as UTF8 encoded `\n` delimited
@@ -318,9 +336,18 @@ class StreamingContext private[streaming] (
       converter: (InputStream) => Iterator[T],
       storageLevel: StorageLevel
     ): ReceiverInputDStream[T] = {
+
+    /**
+      *  TODO 生成 一个 socketInputDStream。
+      */
     new SocketInputDStream[T](this, hostname, port, converter, storageLevel)
   }
 
+  /*
+  raw  未加工的
+
+  接收序列化过的分块
+   */
   /**
    * Create an input stream from network source hostname:port, where data is received
    * as serialized blocks (serialized using the Spark's serializer) that can be directly
@@ -559,6 +586,8 @@ class StreamingContext private[streaming] (
   }
 
   /**
+    *
+    * 【streaming 执行流程1】开启流计算的执行过程！！！！
    * Start the execution of the streams.
    *
    * @throws IllegalStateException if the StreamingContext is already stopped.
@@ -580,6 +609,11 @@ class StreamingContext private[streaming] (
               sparkContext.clearJobGroup()
               sparkContext.setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, "false")
               savedProperties.set(SerializationUtils.clone(sparkContext.localProperties.get()))
+
+              /*
+                   【streaming 执行流程2】任务调度器开始！！
+                    创建eventLoop的匿名类实现，主要是处理各类JobScheduler的事件。
+               */
               scheduler.start()
             }
             state = StreamingContextState.ACTIVE
@@ -602,6 +636,9 @@ class StreamingContext private[streaming] (
         logInfo("StreamingContext started")
       case ACTIVE =>
         logWarning("StreamingContext has already been started")
+        /*
+        当有StreamingContext运行的时候就不许新的StreamingContext运行了，因为，//目前Spark还不支持多个SparkContext同时运行。
+         */
       case STOPPED =>
         throw new IllegalStateException("StreamingContext has already been stopped")
     }

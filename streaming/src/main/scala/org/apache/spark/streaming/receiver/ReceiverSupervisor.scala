@@ -30,6 +30,10 @@ import org.apache.spark.storage.StreamBlockId
 import org.apache.spark.util.{ThreadUtils, Utils}
 
 /**
+  * 负责监督 接收器。
+  *
+  * 提供 所有需要的 接口 处理 接收器接收到的数据
+  *
  * Abstract class that is responsible for supervising a Receiver in the worker.
  * It provides all the necessary interfaces for handling the data received by the receiver.
  */

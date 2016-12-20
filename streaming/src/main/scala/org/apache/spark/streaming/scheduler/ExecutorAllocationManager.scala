@@ -25,6 +25,23 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.streaming.util.RecurringTimer
 import org.apache.spark.util.{Clock, Utils}
 
+/*
+
+executor 分配管理。
+
+  管理 分配给 ssc的的executor 的类。和动态请求或者 杀死executor 根据 streaming 计算的统计。
+
+  这和core的动态分配原则政策不同。
+  core 政策 依赖executor 。 根据core 长时间空闲。 但是streaming 的  微 批处 模型。
+
+  相反的， 空闲端的侧脸  根据 执行每个批次的时间。
+  If (avg. proc. time / batch interval) >= scaling up ratio, then request more executors.
+
+  如果评价下来 每次执行时间    除以 批 数据的时间 ，的比例增大。。。那么会请求更多的executor！！
+  相反，比例减小，会kill 没有 run 一个Receiver的 executor。 Receiver 之外的executor。
+
+  这个功能应当理想的呗使用 ，在压力的结合下， 当 系统的压力增大时， executor 会被重新调整。
+  */
 /**
  * Class that manages executor allocated to a StreamingContext, and dynamically request or kill
  * executors based on the statistics of the streaming computation. This is different from the core

@@ -39,11 +39,21 @@ class SocketInputDStream[T: ClassTag](
     storageLevel: StorageLevel
   ) extends ReceiverInputDStream[T](_ssc) {
 
+
+  /**
+    * 【streaming 执行流程】创建一个socketReceiver来接收数据。
+    * @return
+    */
   def getReceiver(): Receiver[T] = {
     new SocketReceiver(host, port, bytesToObjects, storageLevel)
   }
 }
 
+
+/*
+通过socketReceived 来 接收数据。
+
+ */
 private[streaming]
 class SocketReceiver[T: ClassTag](
     host: String,
@@ -54,10 +64,17 @@ class SocketReceiver[T: ClassTag](
 
   private var socket: Socket = _
 
+  /**
+    * 【streaming 执行流程】 receiver通过onstaet来接收数据。
+    */
   def onStart() {
 
     logInfo(s"Connecting to $host:$port")
     try {
+
+      /**
+        * 根据给定的host和port创建一个socket
+        */
       socket = new Socket(host, port)
     } catch {
       case e: ConnectException =>
@@ -66,6 +83,10 @@ class SocketReceiver[T: ClassTag](
     }
     logInfo(s"Connected to $host:$port")
 
+
+    /**
+      *【streaming 执行流程】 在这里创建一个daemon线程！  接收数据。 run方法里面执行起来！！！调用receiver（）方法。---->SocketReceiver.receiver()
+      */
     // Start the thread that receives data over a connection
     new Thread("Socket Receiver") {
       setDaemon(true)
@@ -84,13 +105,30 @@ class SocketReceiver[T: ClassTag](
     }
   }
 
+  /**
+    * 在这里真正接收数据。
+    *
+    * 什么情况会停止接收数据呢？
+    */
   /** Create a socket connection and receive data until receiver is stopped */
   def receive() {
     try {
       val iterator = bytesToObjects(socket.getInputStream())
+
+
+      /**
+        * 如果没有stop 而且 迭代器里还有值。
+        * 那么久存储数据。
+        *
+        * 存储在哪里？
+        */
       while(!isStopped && iterator.hasNext) {
         store(iterator.next())
       }
+
+      /**
+        * isStopped是父类receiver的方法。
+        */
       if (!isStopped()) {
         restart("Socket data stream had no more data")
       } else {

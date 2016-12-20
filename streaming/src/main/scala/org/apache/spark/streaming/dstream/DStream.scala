@@ -37,9 +37,26 @@ import org.apache.spark.streaming.ui.UIUtils
 import org.apache.spark.util.{CallSite, Utils}
 
 
+/**
+DStream是逻辑级别的，RDD是物理级别的。
+DStream是RDD的模板，DStreamGraph是DAG的模板。
+DStream的依赖关系构成的DStreamGraph是RDD的DAG的模板。
+DStream随着时间的序列生成一系列的RDD
+DStream和RDD之间的关系随着时间的流逝不断产生RDD，private[streaming] var generatedRDDs = new HashMap[Time, RDD[T]]()
+  */
 /*
 一个离散流.是spark streaming里面的基本抽象。
 是rdd 的模版。
+
+
+每个DStream执行一个map,都会生成新的DStream,但是在底层实质是对RDD进行map操作，
+然后产生新的RDD，这个过程是通过Spark Core完成的，
+Spark Streaming对Spark Core进行了一层封装，隐藏了细节，对开发者提供了方便，易用的API。
+
+Spark Streaming中Job的产生，以时间的维度，不断产生batch，
+在算子的操作下，不生产新的DStream，内部实质是产生新的RDD，
+具体在计算的时候，这样就将DStream Graph转成了RRD Graph。然后再有Spark Core引擎计算。
+
  */
 /**
  * A Discretized Stream (DStream), the basic abstraction in Spark Streaming, is a continuous
@@ -87,6 +104,19 @@ abstract class DStream[T: ClassTag] (
   // Methods and fields available on all DStreams
   // =======================================================================
 
+
+  /**
+    * 随着时间的流逝不断的产生DStream，
+    * 然后根据DStream不断的产生RDD，
+    * 根据RDD不断的产生Job，DStream之间有依赖关系
+    * RDD的创建时在DStream中。
+    *
+    *
+    *
+    * Receiver 产生数据。
+    *
+    * dstream内部  以RDD的方式封装数据。
+    */
   // RDDs generated, marked as private[streaming] so that testsuites can access it
   @transient
   private[streaming] var generatedRDDs = new HashMap[Time, RDD[T]]()

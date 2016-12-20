@@ -70,7 +70,19 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     if (eventLoop != null) return // scheduler has already been started
 
     logDebug("Starting JobScheduler")
+
+    /**
+      * 创建eventLoop的匿名类实现，主要是处理各类JobScheduler的事件。
+      */
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
+
+      /**
+        *  处理各种事件。
+        *  JobScheduler是整个Job的调度器，本身用了一条线程循环去监听不同的Job启动，Job完成或失败等
+        *
+        * processEvent(event)
+        * @param event
+        */
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 
       override protected def onError(e: Throwable): Unit = reportError("Error in job scheduler", e)
@@ -79,12 +91,30 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
 
     // attach rate controllers of input streams to receive batch completion updates
     for {
+
+    /**
+      * 获得inputDStream
+      */
       inputDStream <- ssc.graph.getInputStreams
+
+      /**
+        * rateController可以控制输入速度
+        */
       rateController <- inputDStream.rateController
     } ssc.addStreamingListener(rateController)
 
+    /**
+      * 启动StreamingListenerBus,主要是用于更新Spark UI中的StreamTab的内容。
+      */
     listenerBus.start()
+
+
+    /**
+      * ReceiverTracker的作用是: 处理数据接收，数据缓存，Block生成等工作。
+        ReceiverTracker是以发送Job的方式到集群中的Executor去启动receiver。
+      */
     receiverTracker = new ReceiverTracker(ssc)
+
     inputInfoTracker = new InputInfoTracker(ssc)
 
     val executorAllocClient: ExecutorAllocationClient = ssc.sparkContext.schedulerBackend match {
@@ -99,6 +129,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       ssc.graph.batchDuration.milliseconds,
       clock)
     executorAllocationManager.foreach(ssc.addStreamingListener)
+
+    /**
+      * 在这里执行了receiverTracker（跟踪追踪）的start方法！
+      */
     receiverTracker.start()
     jobGenerator.start()
     executorAllocationManager.foreach(_.start())
@@ -167,9 +201,19 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     eventLoop != null
   }
 
+
+  /**
+    *进程事件
+    *
+    * @param event
+    */
   private def processEvent(event: JobSchedulerEvent) {
     try {
       event match {
+
+        /**
+          * 不同的Job启动，Job完成或失败等
+          */
         case JobStarted(job, startTime) => handleJobStart(job, startTime)
         case JobCompleted(job, completedTime) => handleJobCompletion(job, completedTime)
         case ErrorReported(m, e) => handleError(m, e)
@@ -180,6 +224,13 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     }
   }
 
+
+  /**
+    * 处理job的开始！！！
+    *
+    * @param job
+    * @param startTime
+    */
   private def handleJobStart(job: Job, startTime: Long) {
     val jobSet = jobSets.get(job.time)
     val isFirstJobOfJobSet = !jobSet.hasStarted
@@ -189,8 +240,17 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       // correct "jobSet.processingStartTime".
       listenerBus.post(StreamingListenerBatchStarted(jobSet.toBatchInfo))
     }
+
+    /**
+      * 设置任务的开始时间！！
+      */
     job.setStartTime(startTime)
+
     listenerBus.post(StreamingListenerOutputOperationStarted(job.toOutputOperationInfo))
+
+    /**
+      * 开始任务
+      */
     logInfo("Starting job " + job.id + " from job set of time " + jobSet.time)
   }
 
